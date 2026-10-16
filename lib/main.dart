@@ -1,121 +1,220 @@
 import 'package:flutter/material.dart';
+import 'screens/ajustes_screen.dart';
+import 'screens/bienvenida_screen.dart';
+import 'screens/estadisticas_screen.dart';
+import 'screens/principal_screen.dart';
+import 'services/preferencias_service.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  // Aseguramos la inicialización de los bindings de Flutter antes de usar SharedPreferences
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const HabitosApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+/// Widget raíz de la aplicación HabitosApp.
+/// Gestiona la carga inicial de preferencias (Tema, Tamaño de Letra y Estado de Bienvenida).
+class HabitosApp extends StatefulWidget {
+  const HabitosApp({super.key});
 
-  // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  State<HabitosApp> createState() => _HabitosAppState();
+}
+
+class _HabitosAppState extends State<HabitosApp> {
+  bool _cargando = true;
+  bool _esPrimeraVez = true;
+  bool _isDarkMode = false;
+  double _tamanoLetra = 16.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _inicializarApp();
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  /// Carga inicial asíncrona de la app:
+  /// 1. Registra una nueva apertura (incrementa contador int y guarda fecha/hora String).
+  /// 2. Verifica si es la primera vez que se abre la app.
+  /// 3. Obtiene el tema (bool) y el tamaño de letra (double).
+  Future<void> _inicializarApp() async {
+    // Registramos la apertura actual
+    await PreferenciasService.registrarApertura();
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+    final primeraVez = await PreferenciasService.esPrimeraVez();
+    final isDark = await PreferenciasService.getIsDarkMode();
+    final tamano = await PreferenciasService.getTamanoLetra();
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+    if (mounted) {
+      setState(() {
+        _esPrimeraVez = primeraVez;
+        _isDarkMode = isDark;
+        _tamanoLetra = tamano;
+        _cargando = false;
+      });
+    }
+  }
 
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
+  /// Recarga las configuraciones visuales (Tema y Tamaño de Letra)
+  Future<void> _reloadAppSettings() async {
+    final isDark = await PreferenciasService.getIsDarkMode();
+    final tamano = await PreferenciasService.getTamanoLetra();
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _isDarkMode = isDark;
+      _tamanoLetra = tamano;
+    });
+  }
+
+  /// Notifica que la pantalla de bienvenida fue completada
+  void _onBienvenidaCompletada() {
+    setState(() {
+      _esPrimeraVez = false;
+    });
+  }
+
+  /// Restablece la aplicación a su estado inicial tras borrar los datos
+  void _resetApp() {
+    setState(() {
+      _esPrimeraVez = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    if (_cargando) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Factor de escala para el texto basado en el slider de 12 a 24 px (base: 16px)
+    final textScaleFactor = _tamanoLetra / 16.0;
+
+    return MaterialApp(
+      title: 'HábitosApp',
+      debugShowCheckedModeBanner: false,
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: Brightness.light,
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: Brightness.dark,
+        ),
+      ),
+      builder: (context, child) {
+        // Aplica el tamaño de texto personalizado a toda la aplicación
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScaleFactor),
+          ),
+          child: child!,
+        );
+      },
+      home: _esPrimeraVez
+          ? BienvenidaScreen(
+              onBienvenidaCompletada: _onBienvenidaCompletada,
+            )
+          : MainShell(
+              onAppSettingsChanged: _reloadAppSettings,
+              onResetApp: _resetApp,
+            ),
+    );
+  }
+}
+
+/// Shell principal de navegación con barra inferior (BottomNavigationBar).
+class MainShell extends StatefulWidget {
+  final VoidCallback onAppSettingsChanged;
+  final VoidCallback onResetApp;
+
+  const MainShell({
+    super.key,
+    required this.onAppSettingsChanged,
+    required this.onResetApp,
+  });
+
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> {
+  int _selectedIndex = 0;
+  Key _principalKey = UniqueKey();
+  Key _estadisticasKey = UniqueKey();
+
+  void _refreshScreens() {
+    setState(() {
+      _principalKey = UniqueKey();
+      _estadisticasKey = UniqueKey();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> screens = [
+      PrincipalScreen(
+        key: _principalKey,
+        onDataChanged: _refreshScreens,
+      ),
+      EstadisticasScreen(
+        key: _estadisticasKey,
+      ),
+      AjustesScreen(
+        onAppSettingsChanged: () {
+          widget.onAppSettingsChanged();
+          _refreshScreens();
+        },
+        onResetApp: widget.onResetApp,
+      ),
+    ];
+
+    final List<String> titles = [
+      'HábitosApp - Principal',
+      'HábitosApp - Estadísticas',
+      'HábitosApp - Ajustes',
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(titles[_selectedIndex]),
+        elevation: 2,
+        centerTitle: true,
+      ),
+      body: screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+            // Refrescamos las pantallas al cambiar de pestaña para tener siempre datos actualizados
+            _refreshScreens();
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.check_box),
+            label: 'Principal',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Estadísticas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Ajustes',
+          ),
+        ],
       ),
     );
   }
