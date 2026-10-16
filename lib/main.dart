@@ -6,13 +6,11 @@ import 'screens/principal_screen.dart';
 import 'services/preferencias_service.dart';
 
 void main() async {
-  // Aseguramos la inicialización de los bindings de Flutter antes de usar SharedPreferences
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const HabitosApp());
 }
 
-/// Widget raíz de la aplicación HabitosApp.
-/// Gestiona la carga inicial de preferencias (Tema, Tamaño de Letra y Estado de Bienvenida).
+// Widget principal que maneja el tema y el estado de carga inicial de la aplicación
 class HabitosApp extends StatefulWidget {
   const HabitosApp({super.key});
 
@@ -32,12 +30,8 @@ class _HabitosAppState extends State<HabitosApp> {
     _inicializarApp();
   }
 
-  /// Carga inicial asíncrona de la app:
-  /// 1. Registra una nueva apertura (incrementa contador int y guarda fecha/hora String).
-  /// 2. Verifica si es la primera vez que se abre la app.
-  /// 3. Obtiene el tema (bool) y el tamaño de letra (double).
+  // Carga inicial de preferencias (Aperturas, Tema y Tamaño de texto)
   Future<void> _inicializarApp() async {
-    // Registramos la apertura actual
     await PreferenciasService.registrarApertura();
 
     final primeraVez = await PreferenciasService.esPrimeraVez();
@@ -54,7 +48,7 @@ class _HabitosAppState extends State<HabitosApp> {
     }
   }
 
-  /// Recarga las configuraciones visuales (Tema y Tamaño de Letra)
+  // Recarga el tema y el tamaño de letra si han cambiado en Ajustes
   Future<void> _reloadAppSettings() async {
     final isDark = await PreferenciasService.getIsDarkMode();
     final tamano = await PreferenciasService.getTamanoLetra();
@@ -64,14 +58,12 @@ class _HabitosAppState extends State<HabitosApp> {
     });
   }
 
-  /// Notifica que la pantalla de bienvenida fue completada
   void _onBienvenidaCompletada() {
     setState(() {
       _esPrimeraVez = false;
     });
   }
 
-  /// Restablece la aplicación a su estado inicial tras borrar los datos
   void _resetApp() {
     setState(() {
       _esPrimeraVez = true;
@@ -81,9 +73,9 @@ class _HabitosAppState extends State<HabitosApp> {
   @override
   Widget build(BuildContext context) {
     if (_cargando) {
-      return MaterialApp(
+      return const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: const Scaffold(
+        home: Scaffold(
           body: Center(
             child: CircularProgressIndicator(),
           ),
@@ -91,7 +83,6 @@ class _HabitosAppState extends State<HabitosApp> {
       );
     }
 
-    // Factor de escala para el texto basado en el slider de 12 a 24 px (base: 16px)
     final textScaleFactor = _tamanoLetra / 16.0;
 
     return MaterialApp(
@@ -113,7 +104,6 @@ class _HabitosAppState extends State<HabitosApp> {
         ),
       ),
       builder: (context, child) {
-        // Aplica el tamaño de texto personalizado a toda la aplicación
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(textScaleFactor),
@@ -133,7 +123,7 @@ class _HabitosAppState extends State<HabitosApp> {
   }
 }
 
-/// Shell principal de navegación con barra inferior (BottomNavigationBar).
+// Estructura de navegación principal con barra inferior
 class MainShell extends StatefulWidget {
   final VoidCallback onAppSettingsChanged;
   final VoidCallback onResetApp;
@@ -179,25 +169,13 @@ class _MainShellState extends State<MainShell> {
       ),
     ];
 
-    final List<String> titles = [
-      'HábitosApp - Principal',
-      'HábitosApp - Estadísticas',
-      'HábitosApp - Ajustes',
-    ];
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(titles[_selectedIndex]),
-        elevation: 2,
-        centerTitle: true,
-      ),
       body: screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
-            // Refrescamos las pantallas al cambiar de pestaña para tener siempre datos actualizados
             _refreshScreens();
           });
         },

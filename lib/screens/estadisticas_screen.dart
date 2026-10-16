@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/habito.dart';
 import '../services/preferencias_service.dart';
 
-/// Pantalla de Estadísticas de la aplicación.
-/// Muestra métricas globales y la racha/total de días de cada hábito.
+/// PANTALLA: EstadisticasScreen
+/// Muestra métricas de uso de la app (aperturas, fecha/hora de última apertura)
+/// y la racha actual y total de días completados de cada hábito.
 class EstadisticasScreen extends StatefulWidget {
   const EstadisticasScreen({super.key});
 
@@ -24,7 +25,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
     _cargarEstadisticas();
   }
 
-  /// Carga de estadísticas desde SharedPreferences usando el servicio.
+  /// Carga asíncrona de estadísticas desde SharedPreferences
   Future<void> _cargarEstadisticas() async {
     setState(() {
       _cargando = true;
@@ -35,24 +36,31 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
     final tamano = await PreferenciasService.getTamanoLetra();
     final lista = await PreferenciasService.getHabitos();
 
-    if (mounted) {
-      setState(() {
-        _contadorAperturas = contador;
-        _ultimaApertura = ultima;
-        _tamanoLetra = tamano;
-        _habitos = lista;
-        _cargando = false;
-      });
-    }
+    if (!mounted) return;
+
+    setState(() {
+      _contadorAperturas = contador;
+      _ultimaApertura = ultima;
+      _tamanoLetra = tamano;
+      _habitos = lista;
+      _cargando = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     if (_cargando) {
-      return const Center(child: CircularProgressIndicator());
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('HábitosApp - Estadísticas'),
+        elevation: 2,
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -67,7 +75,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Tarjetas con resumen de la app (Aperturas y Última Fecha)
+            // Tarjetas de Aperturas y Última Apertura
             Row(
               children: [
                 Expanded(
@@ -161,7 +169,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              // Métricas de Racha
+                              // Racha
                               Column(
                                 children: [
                                   Row(
@@ -189,7 +197,7 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
                                   ),
                                 ],
                               ),
-                              // Total Días Completados
+                              // Días completados
                               Column(
                                 children: [
                                   Row(
@@ -231,7 +239,6 @@ class _EstadisticasScreenState extends State<EstadisticasScreen> {
     );
   }
 
-  /// Construye una tarjeta genérica para estadísticas del sistema
   Widget _buildTarjetaMetrica({
     required IconData icon,
     required Color color,

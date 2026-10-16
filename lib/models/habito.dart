@@ -1,60 +1,52 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Modelo de datos que representa un Hábito en la aplicación.
-/// Incluye serialización JSON para poder guardarlo mediante SharedPreferences.
+// Modelo de datos para gestionar un hábito en la app
 class Habito {
   final String id;
   final String nombre;
-  final int colorValue; // Guardamos el valor entero del Color (ARGB)
+  final String colorNombre; // 'Azul', 'Verde', 'Naranja'
+  final int colorValue;
   final List<String> fechasCompletadas; // Fechas en formato 'yyyy-MM-dd'
 
   Habito({
     required this.id,
     required this.nombre,
-    required this.colorValue,
+    this.colorNombre = 'Azul',
+    int? colorValue,
     List<String>? fechasCompletadas,
-  }) : fechasCompletadas = fechasCompletadas ?? [];
+  })  : colorValue = colorValue ?? _obtenerColorValue(colorNombre),
+        fechasCompletadas = fechasCompletadas ?? [];
 
-  /// Convierte el objeto Habito a un Map para serializarlo en JSON.
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'nombre': nombre,
-      'colorValue': colorValue,
-      'fechasCompletadas': fechasCompletadas,
-    };
+  // Asigna el color en formato ARGB a partir del nombre elegido
+  static int _obtenerColorValue(String nombreColor) {
+    switch (nombreColor.toLowerCase()) {
+      case 'verde':
+        return Colors.green.toARGB32();
+      case 'naranja':
+        return Colors.orange.toARGB32();
+      case 'azul':
+      default:
+        return Colors.blue.toARGB32();
+    }
   }
 
-  /// Construye una instancia de Habito a partir de un Map deserializado de JSON.
-  factory Habito.fromJson(Map<String, dynamic> json) {
-    return Habito(
-      id: json['id'] as String,
-      nombre: json['nombre'] as String,
-      colorValue: json['colorValue'] as int,
-      fechasCompletadas: (json['fechasCompletadas'] as List<dynamic>?)
-              ?.map((e) => e.toString())
-              .toList() ??
-          [],
-    );
-  }
-
-  /// Formatea la fecha de hoy a 'yyyy-MM-dd' usando intl.
-  /// Comentario intl: La librería 'intl' nos permite formatear objetos DateTime a cadenas estandarizadas.
-  static String get _fechaHoyStr {
+  // Obtiene la fecha actual en formato yyyy-MM-dd usando intl
+  static String get fechaHoyStr {
     return DateFormat('yyyy-MM-dd').format(DateTime.now());
   }
 
-  /// Obtiene el total de días completados
-  int get totalDiasCompletados => fechasCompletadas.length;
-
-  /// Comprueba si el hábito se ha completado hoy.
+  // Comprueba si el hábito ya se ha hecho hoy
   bool get isCompletadoHoy {
-    return fechasCompletadas.contains(_fechaHoyStr);
+    return fechasCompletadas.contains(fechaHoyStr);
   }
 
-  /// Alterna el estado de completado para el día de hoy.
+  // Cuenta el total de días completados
+  int get totalDiasCompletados => fechasCompletadas.length;
+
+  // Marca o desmarca el hábito para el día de hoy
   Habito toggleCompletadoHoy() {
-    final hoy = _fechaHoyStr;
+    final hoy = fechaHoyStr;
     final nuevaLista = List<String>.from(fechasCompletadas);
 
     if (nuevaLista.contains(hoy)) {
@@ -66,7 +58,7 @@ class Habito {
     return copyWith(fechasCompletadas: nuevaLista);
   }
 
-  /// Calcula la racha actual de días consecutivos en los que se ha completado el hábito.
+  // Calcula la racha de días seguidos completados
   int calcularRachaActual() {
     if (fechasCompletadas.isEmpty) return 0;
 
@@ -77,7 +69,6 @@ class Habito {
     int racha = 0;
     DateTime fechaEvaluar = hoySoloFecha;
 
-    // Si hoy no se ha completado, verificamos si ayer sí se completó para mantener la racha activa
     final hoyStr = DateFormat('yyyy-MM-dd').format(hoySoloFecha);
     if (!fechasOrdenadas.contains(hoyStr)) {
       fechaEvaluar = hoySoloFecha.subtract(const Duration(days: 1));
@@ -96,17 +87,46 @@ class Habito {
     return racha;
   }
 
-  /// Crea una copia del objeto actual modificando los campos especificados.
+  // Convierte el objeto a Map para guardar en JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'nombre': nombre,
+      'colorNombre': colorNombre,
+      'colorValue': colorValue,
+      'fechasCompletadas': fechasCompletadas,
+    };
+  }
+
+  // Crea un Habito a partir de los datos decodificados de JSON
+  factory Habito.fromJson(Map<String, dynamic> json) {
+    final colorNom = json['colorNombre'] as String? ?? 'Azul';
+    return Habito(
+      id: json['id'] as String,
+      nombre: json['nombre'] as String,
+      colorNombre: colorNom,
+      colorValue: json['colorValue'] as int? ?? _obtenerColorValue(colorNom),
+      fechasCompletadas: (json['fechasCompletadas'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
+    );
+  }
+
+  // Permite clonar el objeto modificando campos concretos
   Habito copyWith({
     String? id,
     String? nombre,
+    String? colorNombre,
     int? colorValue,
     List<String>? fechasCompletadas,
   }) {
+    final nuevoColorNom = colorNombre ?? this.colorNombre;
     return Habito(
       id: id ?? this.id,
       nombre: nombre ?? this.nombre,
-      colorValue: colorValue ?? this.colorValue,
+      colorNombre: nuevoColorNom,
+      colorValue: colorValue ?? _obtenerColorValue(nuevoColorNom),
       fechasCompletadas: fechasCompletadas ?? this.fechasCompletadas,
     );
   }

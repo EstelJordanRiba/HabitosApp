@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import '../models/habito.dart';
 import '../services/preferencias_service.dart';
+import 'principal_screen.dart';
 
-/// Pantalla de bienvenida mostrada únicamente en la primera ejecución de la app.
-/// Solicita al usuario su nombre y su objetivo diario de hábitos.
+// Pantalla de bienvenida que se muestra la primera vez que se ejecuta la app
 class BienvenidaScreen extends StatefulWidget {
-  final VoidCallback onBienvenidaCompletada;
+  final VoidCallback? onBienvenidaCompletada;
 
   const BienvenidaScreen({
     super.key,
-    required this.onBienvenidaCompletada,
+    this.onBienvenidaCompletada,
   });
 
   @override
@@ -17,58 +16,50 @@ class BienvenidaScreen extends StatefulWidget {
 }
 
 class _BienvenidaScreenState extends State<BienvenidaScreen> {
+  // Controladores para los dos campos de texto
+  late TextEditingController _nombreController;
+  late TextEditingController _objetivoController;
+
   final _formKey = GlobalKey<FormState>();
-  final _nombreController = TextEditingController();
-  final _objetivoController = TextEditingController(text: '3');
-  bool _guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nombreController = TextEditingController();
+    _objetivoController = TextEditingController(text: '3');
+  }
 
   @override
   void dispose() {
+    // Liberamos los controladores al salir de la pantalla
     _nombreController.dispose();
     _objetivoController.dispose();
     super.dispose();
   }
 
-  Future<void> _guardarYContinuar() async {
+  // Valida los datos introducidos, los guarda en SharedPreferences y navega a la pantalla principal
+  Future<void> _comenzar() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _guardando = true;
-      });
-
       final nombre = _nombreController.text.trim();
       final objetivo = int.parse(_objetivoController.text.trim());
 
-      // Guardamos el nombre (TIPO String) y el objetivo (TIPO int) en SharedPreferences a través del servicio
       await PreferenciasService.guardarBienvenida(nombre, objetivo);
 
-      // Si no hay hábitos creados, creamos unos hábitos por defecto para comenzar
-      final habitosExistentes = await PreferenciasService.getHabitos();
-      if (habitosExistentes.isEmpty) {
-        final habitosIniciales = [
-          Habito(
-            id: '1',
-            nombre: 'Beber 2 Litros de agua',
-            colorValue: Colors.blue.toARGB32(),
-          ),
-          Habito(
-            id: '2',
-            nombre: 'Caminar 30 minutos',
-            colorValue: Colors.green.toARGB32(),
-          ),
-          Habito(
-            id: '3',
-            nombre: 'Leer 15 minutos',
-            colorValue: Colors.orange.toARGB32(),
-          ),
-        ];
-        await PreferenciasService.guardarHabitos(habitosIniciales);
-      }
+      if (!mounted) return;
 
-      if (mounted) {
-        setState(() {
-          _guardando = false;
-        });
-        widget.onBienvenidaCompletada();
+      if (widget.onBienvenidaCompletada != null) {
+        widget.onBienvenidaCompletada!();
+      } else {
+        // Pasamos los datos al constructor de PrincipalScreen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PrincipalScreen(
+              nombreUsuarioInicial: nombre,
+              objetivoDiarioInicial: objetivo,
+            ),
+          ),
+        );
       }
     }
   }
@@ -76,105 +67,95 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Icono de bienvenida
-                  Icon(
-                    Icons.check_circle_outline_rounded,
-                    size: 90,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    '¡Bienvenido a HábitosApp!',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Registra y mejora tus hábitos diarios de forma sencilla.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey.shade600,
-                        ),
-                  ),
-                  const SizedBox(height: 36),
-
-                  // Campo: Nombre de usuario
-                  TextFormField(
-                    controller: _nombreController,
-                    decoration: const InputDecoration(
-                      labelText: '¿Cómo te llamas?',
-                      hintText: 'Tu nombre o apodo',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    textCapitalization: TextCapitalization.words,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Por favor, introduce tu nombre';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Campo: Objetivo diario
-                  TextFormField(
-                    controller: _objetivoController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Objetivo diario de hábitos',
-                      hintText: 'Número de hábitos que quieres lograr al día',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.flag),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Introduce un número de hábitos objetivo';
-                      }
-                      final num = int.tryParse(value.trim());
-                      if (num == null || num <= 0) {
-                        return 'Debe ser un número mayor a 0';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Botón para comenzar
-                  ElevatedButton(
-                    onPressed: _guardando ? null : _guardarYContinuar,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _guardando
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text(
-                            'Comenzar',
-                            style: TextStyle(fontSize: 18),
-                          ),
-                  ),
-                ],
+      appBar: AppBar(
+        title: const Text('HábitosApp - Bienvenida'),
+        centerTitle: true,
+      ),
+      // SingleChildScrollView para evitar desbordamientos cuando sale el teclado
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
+              Icon(
+                Icons.task_alt,
+                size: 80,
+                color: Theme.of(context).colorScheme.primary,
               ),
-            ),
+              const SizedBox(height: 16),
+              const Text(
+                'Bienvenido a HábitosApp',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Configura tus datos iniciales para comenzar a registrar tus hábitos diarios.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 32),
+
+              // Campo para el nombre del usuario
+              TextFormField(
+                controller: _nombreController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del usuario',
+                  hintText: 'Ej. Juan, María...',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Introduce tu nombre';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+
+              // Campo para el objetivo diario de hábitos
+              TextFormField(
+                controller: _objetivoController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Objetivo diario de hábitos',
+                  hintText: 'Número de hábitos objetivo al día',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.flag),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Introduce un número';
+                  }
+                  final num = int.tryParse(value.trim());
+                  if (num == null || num <= 0) {
+                    return 'Debe ser un número entero mayor que 0';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 36),
+
+              // Botón para acceder a la pantalla principal
+              ElevatedButton.icon(
+                onPressed: _comenzar,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text('Comenzar', style: TextStyle(fontSize: 18)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
