@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 class Habito {
   final String id;
   final String nombre;
-  final String colorNombre; // 'Azul', 'Verde', 'Naranja'
+  final String colorNombre; // 'Azul', 'Verde', 'Naranja', 'Rojo', 'Morado', 'Rosa', 'Amarillo', 'Cian'
   final int colorValue;
   final List<String> fechasCompletadas; // Fechas en formato 'yyyy-MM-dd'
 
@@ -18,13 +18,24 @@ class Habito {
   })  : colorValue = colorValue ?? _obtenerColorValue(colorNombre),
         fechasCompletadas = fechasCompletadas ?? [];
 
-  // Asigna el color en formato ARGB a partir del nombre elegido
+  // Mapea el nombre del color a su valor ARGB en Flutter
   static int _obtenerColorValue(String nombreColor) {
     switch (nombreColor.toLowerCase()) {
       case 'verde':
         return Colors.green.toARGB32();
       case 'naranja':
         return Colors.orange.toARGB32();
+      case 'rojo':
+        return Colors.red.toARGB32();
+      case 'morado':
+        return Colors.purple.toARGB32();
+      case 'rosa':
+        return Colors.pink.toARGB32();
+      case 'amarillo':
+        return Colors.amber.toARGB32();
+      case 'cian':
+      case 'turquesa':
+        return Colors.teal.toARGB32();
       case 'azul':
       default:
         return Colors.blue.toARGB32();

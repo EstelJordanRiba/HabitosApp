@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/habito.dart';
 import '../services/preferencias_service.dart';
 import 'principal_screen.dart';
 
@@ -16,7 +17,6 @@ class BienvenidaScreen extends StatefulWidget {
 }
 
 class _BienvenidaScreenState extends State<BienvenidaScreen> {
-  // Controladores para los dos campos de texto
   late TextEditingController _nombreController;
   late TextEditingController _objetivoController;
 
@@ -31,13 +31,36 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
 
   @override
   void dispose() {
-    // Liberamos los controladores al salir de la pantalla
     _nombreController.dispose();
     _objetivoController.dispose();
     super.dispose();
   }
 
-  // Valida los datos introducidos, los guarda en SharedPreferences y navega a la pantalla principal
+  // Genera hábitos de ejemplo con variedad de colores según el objetivo
+  List<Habito> _generarHabitosIniciales(int objetivo) {
+    final plantillas = [
+      {'nombre': 'Beber agua', 'color': 'Azul'},
+      {'nombre': 'Caminar 30 min', 'color': 'Verde'},
+      {'nombre': 'Leer 15 min', 'color': 'Naranja'},
+      {'nombre': 'Hacer ejercicio', 'color': 'Rojo'},
+      {'nombre': 'Pasear al perro', 'color': 'Amarillo'},
+      {'nombre': 'Meditar 10 min', 'color': 'Morado'},
+      {'nombre': 'Comer fruta', 'color': 'Rosa'},
+      {'nombre': 'Dormir 8 horas', 'color': 'Cian'},
+    ];
+
+    final cantidad = objetivo.clamp(1, plantillas.length);
+    return List.generate(cantidad, (i) {
+      final item = plantillas[i];
+      return Habito(
+        id: (i + 1).toString(),
+        nombre: item['nombre']!,
+        colorNombre: item['color']!,
+      );
+    });
+  }
+
+  // Valida los datos introducidos, los guarda en local y navega a la pantalla principal
   Future<void> _comenzar() async {
     if (_formKey.currentState!.validate()) {
       final nombre = _nombreController.text.trim();
@@ -45,12 +68,14 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
 
       await PreferenciasService.guardarBienvenida(nombre, objetivo);
 
+      final habitosIniciales = _generarHabitosIniciales(objetivo);
+      await PreferenciasService.guardarHabitos(habitosIniciales);
+
       if (!mounted) return;
 
       if (widget.onBienvenidaCompletada != null) {
         widget.onBienvenidaCompletada!();
       } else {
-        // Pasamos los datos al constructor de PrincipalScreen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -71,7 +96,6 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
         title: const Text('HábitosApp - Bienvenida'),
         centerTitle: true,
       ),
-      // SingleChildScrollView para evitar desbordamientos cuando sale el teclado
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -102,7 +126,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Campo para el nombre del usuario
+              // Campo Nombre
               TextFormField(
                 controller: _nombreController,
                 decoration: const InputDecoration(
@@ -120,7 +144,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Campo para el objetivo diario de hábitos
+              // Campo Objetivo Diario
               TextFormField(
                 controller: _objetivoController,
                 keyboardType: TextInputType.number,
@@ -143,7 +167,7 @@ class _BienvenidaScreenState extends State<BienvenidaScreen> {
               ),
               const SizedBox(height: 36),
 
-              // Botón para acceder a la pantalla principal
+              // Botón Comenzar
               ElevatedButton.icon(
                 onPressed: _comenzar,
                 icon: const Icon(Icons.arrow_forward),

@@ -16,14 +16,22 @@ class EditarHabitoScreen extends StatefulWidget {
 }
 
 class _EditarHabitoScreenState extends State<EditarHabitoScreen> {
-  // Controlador del campo de texto
   late TextEditingController _nombreController;
 
-  // Estado para guardar el color seleccionado ('Azul', 'Verde', 'Naranja')
+  // Estado para guardar el color seleccionado
   late String _colorSeleccionado;
 
-  // Tres colores disponibles para seleccionar
-  final List<String> _opcionesColor = ['Azul', 'Verde', 'Naranja'];
+  // Opciones de colores disponibles
+  final List<String> _opcionesColor = [
+    'Azul',
+    'Verde',
+    'Naranja',
+    'Rojo',
+    'Morado',
+    'Rosa',
+    'Amarillo',
+    'Cian',
+  ];
 
   @override
   void initState() {
@@ -45,6 +53,16 @@ class _EditarHabitoScreenState extends State<EditarHabitoScreen> {
         return Colors.green;
       case 'naranja':
         return Colors.orange;
+      case 'rojo':
+        return Colors.red;
+      case 'morado':
+        return Colors.purple;
+      case 'rosa':
+        return Colors.pink;
+      case 'amarillo':
+        return Colors.amber;
+      case 'cian':
+        return Colors.teal;
       case 'azul':
       default:
         return Colors.blue;
@@ -67,7 +85,7 @@ class _EditarHabitoScreenState extends State<EditarHabitoScreen> {
     });
   }
 
-  // Vuelve a la pantalla principal sin devolver ningún cambio (null)
+  // Vuelve a la pantalla principal sin devolver ningún cambio
   void _cancelar() {
     Navigator.pop(context, null);
   }
@@ -93,7 +111,7 @@ class _EditarHabitoScreenState extends State<EditarHabitoScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Campo de texto con labelText y OutlineInputBorder
+            // Campo de texto para el nombre
             TextField(
               controller: _nombreController,
               decoration: const InputDecoration(
@@ -114,9 +132,11 @@ class _EditarHabitoScreenState extends State<EditarHabitoScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Botones de colores agrupados en una Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            // Botones de colores dispuestos en Wrap para adaptarse a varias líneas
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              alignment: WrapAlignment.center,
               children: _opcionesColor.map((colorNombre) {
                 final esSeleccionado = _colorSeleccionado == colorNombre;
                 final colorWidget = _obtenerColor(colorNombre);
